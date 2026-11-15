@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,7 +8,13 @@
     <style>
         :root { --primary: #2563eb; --secondary: #1e40af; --bg: #f3f4f6; --text: #1f2937; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); }
-        header { background-color: var(--primary); color: white; padding: 1rem 2rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* PENGATURAN HEADER & LOGO */
+        header { background-color: var(--primary); color: white; padding: 1.5rem 2rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .logo { width: 90px; height: auto; margin-bottom: 10px; border-radius: 8px; /* Opsional jika ingin sudut logo agak membulat */ }
+        header h1 { margin: 0 0 5px 0; font-size: 1.8rem; }
+        header p { margin: 0; font-size: 1rem; opacity: 0.9; }
+
         nav { display: flex; justify-content: center; flex-wrap: wrap; background: white; padding: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         nav button { background: none; border: none; padding: 10px 15px; font-size: 1rem; cursor: pointer; font-weight: bold; color: var(--text); border-bottom: 3px solid transparent; }
         nav button.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
@@ -46,7 +53,8 @@
             .container { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
             .tab-content { display: none !important; }
             #Dashboard { display: block !important; }
-            header { background: white; color: black; box-shadow: none; border-bottom: 2px solid black; margin-bottom: 20px; }
+            header { background: white; color: black; box-shadow: none; border-bottom: 2px solid black; margin-bottom: 20px; padding: 1rem 0; }
+            .logo { width: 80px; } /* Ukuran logo disesuaikan saat print */
             th { background-color: #f3f4f6 !important; color: black !important; }
         }
     </style>
@@ -54,6 +62,8 @@
 <body onload="fetchMasterData()">
 
 <header>
+    <!-- PENAMBAHAN KODE LOGO DI SINI -->
+    <img src="logo.png" alt="Logo SMART SI-APIK" class="logo">
     <h1>SMART SI-APIK SANG21</h1>
     <p>Sistem Supervisi Akademik & Keputusan Berbasis Data</p>
 </header>
@@ -219,7 +229,6 @@
             } else {
                 data.forEach(row => {
                     let tr = document.createElement("tr");
-                    // Menyimpan data raw ke atribut untuk keperluan edit
                     let rawData = encodeURIComponent(JSON.stringify(row));
                     tr.innerHTML = `
                         <td>${new Date(row.tanggal).toLocaleDateString('id-ID')}</td>
@@ -236,7 +245,6 @@
                 });
             }
 
-            // Update Dropdowns
             const updateDropdown = (id, tipe) => {
                 let sel = document.getElementById(id);
                 sel.innerHTML = '<option value="">-- Pilih Guru --</option>';
@@ -254,7 +262,6 @@
         });
     }
 
-    // Fungsi Submit Insert Data (seperti sebelumnya)
     function submitForm(e, tipeForm) {
         e.preventDefault();
         if(SCRIPT_URL === "URL_GAS_ANDA_DISINI") { alert("URL GAS belum diatur!"); return; }
@@ -277,12 +284,10 @@
         e.target.reset();
     }
 
-    // Fungsi Fitur Auto Fill Form
     function autoFillPra() { let r=globalData.slice().reverse().find(d=>d.nama===document.getElementById('pra_nama').value && d.tipe==='Jadwal'); if(r) document.getElementById('pra_mapel').value=r.mapel; }
     function autoFillPelaksanaan() { let r=globalData.slice().reverse().find(d=>d.nama===document.getElementById('pel_nama').value && d.tipe==='Pra-Supervisi'); if(r){ document.getElementById('pel_mapel').value=r.mapel; document.getElementById('pel_fokus').value=r.tindakLanjut.replace('Area: ',''); } }
     function autoFillPasca() { let r=globalData.slice().reverse().find(d=>d.nama===document.getElementById('pasca_nama').value && d.tipe==='Pelaksanaan'); if(r){ document.getElementById('pasca_mapel').value=r.mapel; let perbaikan=r.catatan.split('| Perbaikan: ')[1]; if(perbaikan) document.getElementById('pasca_topik').value="Observasi: "+perbaikan; } }
 
-    // --- FITUR BARU: EDIT & HAPUS ---
     function hapusData(id) {
         if(confirm("Apakah Anda yakin ingin menghapus rekaman ini?")) {
             executeGAS({action: 'delete', id: id}, "Menghapus...");
@@ -291,14 +296,12 @@
 
     function bukaEdit(rawJson) {
         let data = JSON.parse(decodeURIComponent(rawJson));
-        // Isi form modal
         document.getElementById('edit_id').value = data.id;
         document.getElementById('edit_nama').value = data.nama;
         document.getElementById('edit_tanggal').value = new Date(data.tanggal).toISOString().split('T')[0];
         document.getElementById('edit_mapel').value = data.mapel;
         document.getElementById('edit_tindaklanjut').value = data.tindakLanjut;
         document.getElementById('edit_catatan').value = data.catatan;
-        
         document.getElementById('editModal').style.display = 'block';
     }
 
@@ -306,19 +309,14 @@
 
     function simpanEdit() {
         let payload = {
-            action: 'edit',
-            id: document.getElementById('edit_id').value,
-            nama: document.getElementById('edit_nama').value,
-            tanggal: document.getElementById('edit_tanggal').value,
-            mapel: document.getElementById('edit_mapel').value,
-            tindakLanjut: document.getElementById('edit_tindaklanjut').value,
-            catatan: document.getElementById('edit_catatan').value
+            action: 'edit', id: document.getElementById('edit_id').value, nama: document.getElementById('edit_nama').value,
+            tanggal: document.getElementById('edit_tanggal').value, mapel: document.getElementById('edit_mapel').value,
+            tindakLanjut: document.getElementById('edit_tindaklanjut').value, catatan: document.getElementById('edit_catatan').value
         };
         executeGAS(payload, "Mengupdate...");
         tutupEdit();
     }
 
-    // --- FITUR BARU: BACKUP & RESTORE ---
     function backupData() {
         if(globalData.length === 0) { alert("Data masih kosong!"); return; }
         const blob = new Blob([JSON.stringify(globalData, null, 2)], { type: 'application/json' });
@@ -342,19 +340,15 @@
             } catch(err) { alert("File JSON tidak valid!"); }
         };
         reader.readAsText(file);
-        event.target.value = ""; // reset input
+        event.target.value = ""; 
     }
 
-    // Fungsi Utama Pengeksekusi Server
     function executeGAS(payload, loadingMsg) {
         document.getElementById('globalLoader').innerText = loadingMsg;
         document.getElementById('globalLoader').style.display = "block";
-
         fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(() => {
-            // Karena no-cors, kita reload data setelah jeda waktu agar server selesai memproses
-            setTimeout(() => { fetchMasterData(); alert("Perintah berhasil dieksekusi!"); }, 2000);
-        }).catch(e => { alert("Error jaringan."); document.getElementById('globalLoader').style.display = "none"; });
+        .then(() => { setTimeout(() => { fetchMasterData(); alert("Perintah berhasil dieksekusi!"); }, 2000); })
+        .catch(e => { alert("Error jaringan."); document.getElementById('globalLoader').style.display = "none"; });
     }
 </script>
 </body>
