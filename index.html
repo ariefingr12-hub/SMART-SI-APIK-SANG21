@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART SI-APIK SANG21</title>
+    <style>
+        :root { --primary: #2563eb; --secondary: #1e40af; --bg: #f3f4f6; --text: #1f2937; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); }
+        header { background-color: var(--primary); color: white; padding: 1rem 2rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        nav { display: flex; justify-content: center; flex-wrap: wrap; background: white; padding: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        nav button { background: none; border: none; padding: 10px 15px; font-size: 1rem; cursor: pointer; font-weight: bold; color: var(--text); border-bottom: 3px solid transparent; }
+        nav button.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+        .container { max-width: 900px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-end; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem; }
+        .note { font-size: 0.8rem; color: #6b7280; margin-top: -0.25rem; margin-bottom: 0.5rem; display: block; }
+        input, select, textarea { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        input[readonly], textarea[readonly] { background-color: #f9fafb; color: #4b5563; }
+        
+        button.btn-submit { background-color: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin-top: 10px; }
+        button.btn-submit:hover { background-color: var(--secondary); }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 0.9rem; }
+        th { background-color: var(--primary); color: white; }
+        .action-btns button { padding: 4px 8px; margin: 2px; font-size: 0.8rem; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-edit { background-color: #f59e0b; }
+        .btn-delete { background-color: #ef4444; }
+        .loader { display: none; text-align: center; margin-top: 10px; font-weight: bold; color: var(--primary); }
+        .section-title { border-bottom: 2px solid var(--bg); padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: var(--primary); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; }
+        .modal-content { background-color: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 600px; border-radius: 8px; }
+        
+        /* PENGATURAN CETAK (PRINT) PDF */
+        @media print {
+            body { background: white; }
+            nav, .btn-group, .action-btns, form, .modal, .loader, th:last-child, td:last-child { display: none !important; }
+            .container { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+            .tab-content { display: none !important; }
+            #Dashboard { display: block !important; }
+            header { background: white; color: black; box-shadow: none; border-bottom: 2px solid black; margin-bottom: 20px; }
+            th { background-color: #f3f4f6 !important; color: black !important; }
+        }
+    </style>
+</head>
+<body onload="fetchMasterData()">
+
+<header>
+    <h1>SMART SI-APIK SANG21</h1>
+    <p>Sistem Supervisi Akademik & Keputusan Berbasis Data</p>
+</header>
+
+<nav>
+    <button class="tab-link active" onclick="openTab(event, 'Dashboard')">Dashboard</button>
+    <button class="tab-link" onclick="openTab(event, 'Jadwal')">Jadwal</button>
+    <button class="tab-link" onclick="openTab(event, 'PraSupervisi')">Pra-Supervisi</button>
+    <button class="tab-link" onclick="openTab(event, 'Pelaksanaan')">Pelaksanaan</button>
+    <button class="tab-link" onclick="openTab(event, 'PascaSupervisi')">Pasca-Supervisi</button>
+</nav>
+
+<div class="container">
+    <div id="globalLoader" class="loader" style="margin-bottom:15px;">Mensinkronkan data dengan server...</div>
+
+    <!-- TAB DASHBOARD -->
+    <div id="Dashboard" class="tab-content active">
+        <h2 class="section-title">Rekap Data & Monitoring</h2>
+        <div class="btn-group">
+            <button class="btn-submit" style="background:#10b981;" onclick="fetchMasterData()">🔄 Muat Ulang Data</button>
+            <button class="btn-submit" style="background:#4b5563;" onclick="window.print()">🖨️ Cetak PDF</button>
+            <button class="btn-submit" style="background:#8b5cf6;" onclick="backupData()">💾 Backup JSON</button>
+            <button class="btn-submit" style="background:#f59e0b;" onclick="document.getElementById('fileRestore').click()">📂 Restore Data</button>
+            <input type="file" id="fileRestore" style="display:none" accept=".json" onchange="restoreData(event)">
+        </div>
+        <div style="overflow-x:auto;">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Tipe Form</th>
+                        <th>Nama Guru</th>
+                        <th>Mapel - Kelas</th>
+                        <th>Status / Tindak Lanjut</th>
+                        <th style="width: 120px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB JADWAL -->
+    <div id="Jadwal" class="tab-content">
+        <h2 class="section-title">Form Perencanaan Jadwal</h2>
+        <form id="formJadwal" onsubmit="submitForm(event, 'Jadwal')">
+            <div class="form-group"><label>Nama Guru</label><input type="text" id="j_nama" required placeholder="Masukkan nama guru"></div>
+            <div class="form-row">
+                <div class="form-group"><label>Rencana Tanggal</label><input type="date" id="j_tanggal" required></div>
+                <div class="form-group"><label>Mata Pelajaran / Kelas</label><input type="text" id="j_mapel" required></div>
+            </div>
+            <button type="submit" class="btn-submit">Simpan Jadwal</button>
+            <div id="loadingJadwal" class="loader">Menyimpan data...</div>
+        </form>
+    </div>
+
+    <!-- TAB PRA-SUPERVISI -->
+    <div id="PraSupervisi" class="tab-content">
+        <h2 class="section-title">Catatan Percakapan Pra-Supervisi</h2>
+        <button type="button" class="btn-submit" style="background:#10b981; width:auto; margin-bottom:10px;" onclick="fetchMasterData()">🔄 Tarik Nama Guru dari Jadwal</button>
+        <form id="formPra" onsubmit="submitForm(event, 'Pra-Supervisi')">
+            <div class="form-row">
+                <div class="form-group"><label>Nama Guru (Terjadwal)</label><select id="pra_nama" required onchange="autoFillPra()"><option value="">-- Pilih Guru --</option></select></div>
+                <div class="form-group"><label>Hari / Tanggal</label><input type="date" id="pra_tanggal" required></div>
+            </div>
+            <div class="form-group"><label>Mata Pelajaran - Kelas</label><input type="text" id="pra_mapel" required></div>
+            <div class="form-group"><label>Tujuan Pembelajaran</label><textarea id="pra_tujuan" rows="2" required></textarea></div>
+            <div class="form-group"><label>Area Pengembangan yang Hendak Dicapai</label><textarea id="pra_area" rows="2" required></textarea></div>
+            <div class="form-group"><label>Strategi yang Dipersiapkan</label><textarea id="pra_strategi" rows="2" required></textarea></div>
+            <button type="submit" class="btn-submit">Simpan Pra-Supervisi</button>
+            <div id="loadingPra" class="loader">Menyimpan data...</div>
+        </form>
+    </div>
+
+    <!-- TAB PELAKSANAAN -->
+    <div id="Pelaksanaan" class="tab-content">
+        <h2 class="section-title">Pelaksanaan Supervisi (Observasi Kualitatif)</h2>
+        <button type="button" class="btn-submit" style="background:#10b981; width:auto; margin-bottom:10px;" onclick="fetchMasterData()">🔄 Sinkronkan Data Pra-Supervisi</button>
+        <form id="formPelaksanaan" onsubmit="submitForm(event, 'Pelaksanaan')">
+            <div class="form-row">
+                <div class="form-group"><label>Nama Guru (Sudah Pra-Supervisi)</label><select id="pel_nama" required onchange="autoFillPelaksanaan()"><option value="">-- Pilih Guru --</option></select></div>
+                <div class="form-group"><label>Tanggal Observasi</label><input type="date" id="pel_tanggal" required></div>
+            </div>
+            <div class="form-group"><label>Mata Pelajaran - Kelas</label><input type="text" id="pel_mapel" readonly></div>
+            <div class="form-group"><label>Fokus Area Pengembangan</label><textarea id="pel_fokus" rows="2" readonly></textarea></div>
+            <div class="form-group"><label>Catatan Observasi Deskriptif</label><textarea id="pel_observasi" rows="4" required></textarea></div>
+            <div class="form-group"><label>Kekuatan Pembelajaran</label><textarea id="pel_kekuatan" rows="2" required></textarea></div>
+            <div class="form-group"><label>Hal yang Perlu Ditingkatkan</label><textarea id="pel_perbaikan" rows="2" required></textarea></div>
+            <button type="submit" class="btn-submit">Simpan Pelaksanaan Supervisi</button>
+            <div id="loadingPelaksanaan" class="loader">Menyimpan data...</div>
+        </form>
+    </div>
+
+    <!-- TAB PASCA-SUPERVISI -->
+    <div id="PascaSupervisi" class="tab-content">
+        <h2 class="section-title">Catatan Percakapan Pasca-Supervisi</h2>
+        <button type="button" class="btn-submit" style="background:#10b981; width:auto; margin-bottom:10px;" onclick="fetchMasterData()">🔄 Sinkronkan Hasil Observasi</button>
+        <form id="formPasca" onsubmit="submitForm(event, 'Pasca-Supervisi')">
+            <div class="form-row">
+                <div class="form-group"><label>Nama Guru (Sudah Diobservasi)</label><select id="pasca_nama" required onchange="autoFillPasca()"><option value="">-- Pilih Guru --</option></select></div>
+                <div class="form-group"><label>Tanggal Pasca</label><input type="date" id="pasca_tanggal" required></div>
+            </div>
+            <div class="form-group"><label>Mata Pelajaran - Kelas</label><input type="text" id="pasca_mapel" readonly></div>
+            <div class="form-group"><label>Topik Percakapan</label><textarea id="pasca_topik" rows="2" readonly></textarea></div>
+            <div class="form-group"><label>Catatan Refleksi Guru</label><textarea id="pasca_refleksi" rows="3" required></textarea></div>
+            <div class="form-group"><label>Rencana Tindak Lanjut</label><textarea id="pasca_tindaklanjut" rows="3" required></textarea></div>
+            <button type="submit" class="btn-submit">Simpan Pasca-Supervisi</button>
+            <div id="loadingPasca" class="loader">Menyimpan data...</div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDIT DATA -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h2 class="section-title" style="margin-top:0;">Edit Data Terpilih</h2>
+        <input type="hidden" id="edit_id">
+        <div class="form-group"><label>Nama Guru</label><input type="text" id="edit_nama" required></div>
+        <div class="form-row">
+            <div class="form-group"><label>Tanggal</label><input type="date" id="edit_tanggal" required></div>
+            <div class="form-group"><label>Mata Pelajaran/Kelas</label><input type="text" id="edit_mapel" required></div>
+        </div>
+        <div class="form-group"><label>Status / Tindak Lanjut</label><textarea id="edit_tindaklanjut" rows="2"></textarea></div>
+        <div class="form-group"><label>Catatan Lengkap</label><textarea id="edit_catatan" rows="4"></textarea></div>
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="simpanEdit()" class="btn-submit">Simpan Perubahan</button>
+            <button onclick="tutupEdit()" class="btn-submit" style="background:#6b7280;">Batal</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT DI SINI
+    const SCRIPT_URL = "https://script.google.com/a/macros/admin.sd.belajar.id/s/AKfycbwS0heF87x5Upbk9bPve7-pfPHZJHst4OcCssFphx6A7RU8Tl-VCwFu6X4Rsh4SFbONSw/exec"; 
+    let globalData = []; 
+
+    function openTab(evt, tabName) {
+        let tabcontent = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabcontent.length; i++) { tabcontent[i].classList.remove("active"); }
+        let tablinks = document.getElementsByClassName("tab-link");
+        for (let i = 0; i < tablinks.length; i++) { tablinks[i].classList.remove("active"); }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    function fetchMasterData() {
+        if(SCRIPT_URL === "URL_GAS_ANDA_DISINI") return;
+        document.getElementById('globalLoader').style.display = "block";
+        
+        fetch(SCRIPT_URL + "?action=read")
+        .then(res => res.json())
+        .then(data => {
+            globalData = data; 
+            document.getElementById('globalLoader').style.display = "none";
+            
+            let tbody = document.querySelector("#dataTable tbody");
+            tbody.innerHTML = ""; 
+            if(data.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Belum ada data terekam.</td></tr>";
+            } else {
+                data.forEach(row => {
+                    let tr = document.createElement("tr");
+                    // Menyimpan data raw ke atribut untuk keperluan edit
+                    let rawData = encodeURIComponent(JSON.stringify(row));
+                    tr.innerHTML = `
+                        <td>${new Date(row.tanggal).toLocaleDateString('id-ID')}</td>
+                        <td>${row.tipe}</td>
+                        <td>${row.nama}</td>
+                        <td>${row.mapel}</td>
+                        <td>${row.tindakLanjut}</td>
+                        <td class="action-btns">
+                            <button class="btn-edit" onclick="bukaEdit('${rawData}')">Edit</button>
+                            <button class="btn-delete" onclick="hapusData('${row.id}')">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update Dropdowns
+            const updateDropdown = (id, tipe) => {
+                let sel = document.getElementById(id);
+                sel.innerHTML = '<option value="">-- Pilih Guru --</option>';
+                data.filter(d => d.tipe === tipe).forEach(g => {
+                    sel.innerHTML += `<option value="${g.nama}">${g.nama}</option>`;
+                });
+            };
+            updateDropdown('pra_nama', 'Jadwal');
+            updateDropdown('pel_nama', 'Pra-Supervisi');
+            updateDropdown('pasca_nama', 'Pelaksanaan');
+
+        }).catch(err => {
+            document.getElementById('globalLoader').style.display = "none";
+            console.error('Gagal menarik data:', err);
+        });
+    }
+
+    // Fungsi Submit Insert Data (seperti sebelumnya)
+    function submitForm(e, tipeForm) {
+        e.preventDefault();
+        if(SCRIPT_URL === "URL_GAS_ANDA_DISINI") { alert("URL GAS belum diatur!"); return; }
+
+        let payload = { action: "insert", tipe: tipeForm };
+        if (tipeForm === 'Jadwal') {
+            payload.nama = document.getElementById('j_nama').value; payload.tanggal = document.getElementById('j_tanggal').value; payload.mapel = document.getElementById('j_mapel').value; payload.tindakLanjut = "Menunggu Pra-Supervisi"; payload.catatan = "-";
+        } else if (tipeForm === 'Pra-Supervisi') {
+            payload.nama = document.getElementById('pra_nama').value; payload.tanggal = document.getElementById('pra_tanggal').value; payload.mapel = document.getElementById('pra_mapel').value; payload.tindakLanjut = "Area: " + document.getElementById('pra_area').value; 
+            payload.catatan = "Tujuan: " + document.getElementById('pra_tujuan').value + " | Strategi: " + document.getElementById('pra_strategi').value;
+        } else if (tipeForm === 'Pelaksanaan') {
+            payload.nama = document.getElementById('pel_nama').value; payload.tanggal = document.getElementById('pel_tanggal').value; payload.mapel = document.getElementById('pel_mapel').value; payload.tindakLanjut = "Menunggu Pasca-Supervisi";
+            payload.catatan = "Fokus: " + document.getElementById('pel_fokus').value + " | Observasi: " + document.getElementById('pel_observasi').value + " | Kekuatan: " + document.getElementById('pel_kekuatan').value + " | Perbaikan: " + document.getElementById('pel_perbaikan').value;
+        } else if (tipeForm === 'Pasca-Supervisi') {
+            payload.nama = document.getElementById('pasca_nama').value; payload.tanggal = document.getElementById('pasca_tanggal').value; payload.mapel = document.getElementById('pasca_mapel').value; payload.tindakLanjut = document.getElementById('pasca_tindaklanjut').value;
+            payload.catatan = "Topik: " + document.getElementById('pasca_topik').value + " | Refleksi: " + document.getElementById('pasca_refleksi').value;
+        }
+
+        executeGAS(payload, "Menyimpan...");
+        e.target.reset();
+    }
+
+    // Fungsi Fitur Auto Fill Form
+    function autoFillPra() { let r=globalData.slice().reverse().find(d=>d.nama===document.getElementById('pra_nama').value && d.tipe==='Jadwal'); if(r) document.getElementById('pra_mapel').value=r.mapel; }
+    function autoFillPelaksanaan() { let r=globalData.slice().reverse().find(d=>d.nama===document.getElementById('pel_nama').value && d.tipe==='Pra-Supervisi'); if(r){ document.getElementById('pel_mapel').value=r.mapel; document.getElementById('pel_fokus').value=r.tindakLanjut.replace('Area: ',''); } }
+    function autoFillPasca() { let r=globalData.slice().reverse().find(d=>d.nama===document.getElementById('pasca_nama').value && d.tipe==='Pelaksanaan'); if(r){ document.getElementById('pasca_mapel').value=r.mapel; let perbaikan=r.catatan.split('| Perbaikan: ')[1]; if(perbaikan) document.getElementById('pasca_topik').value="Observasi: "+perbaikan; } }
+
+    // --- FITUR BARU: EDIT & HAPUS ---
+    function hapusData(id) {
+        if(confirm("Apakah Anda yakin ingin menghapus rekaman ini?")) {
+            executeGAS({action: 'delete', id: id}, "Menghapus...");
+        }
+    }
+
+    function bukaEdit(rawJson) {
+        let data = JSON.parse(decodeURIComponent(rawJson));
+        // Isi form modal
+        document.getElementById('edit_id').value = data.id;
+        document.getElementById('edit_nama').value = data.nama;
+        document.getElementById('edit_tanggal').value = new Date(data.tanggal).toISOString().split('T')[0];
+        document.getElementById('edit_mapel').value = data.mapel;
+        document.getElementById('edit_tindaklanjut').value = data.tindakLanjut;
+        document.getElementById('edit_catatan').value = data.catatan;
+        
+        document.getElementById('editModal').style.display = 'block';
+    }
+
+    function tutupEdit() { document.getElementById('editModal').style.display = 'none'; }
+
+    function simpanEdit() {
+        let payload = {
+            action: 'edit',
+            id: document.getElementById('edit_id').value,
+            nama: document.getElementById('edit_nama').value,
+            tanggal: document.getElementById('edit_tanggal').value,
+            mapel: document.getElementById('edit_mapel').value,
+            tindakLanjut: document.getElementById('edit_tindaklanjut').value,
+            catatan: document.getElementById('edit_catatan').value
+        };
+        executeGAS(payload, "Mengupdate...");
+        tutupEdit();
+    }
+
+    // --- FITUR BARU: BACKUP & RESTORE ---
+    function backupData() {
+        if(globalData.length === 0) { alert("Data masih kosong!"); return; }
+        const blob = new Blob([JSON.stringify(globalData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Backup_SI-APIK_' + new Date().toLocaleDateString('id-ID').replace(/\//g,'-') + '.json';
+        a.click();
+    }
+
+    function restoreData(event) {
+        let file = event.target.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let json = JSON.parse(e.target.result);
+                if(confirm(`Yakin me-restore ${json.length} baris data ke server? Data baru akan ditambahkan (tidak menimpa data lama).`)) {
+                    executeGAS({action: 'bulk_restore', rows: json}, "Merestore...");
+                }
+            } catch(err) { alert("File JSON tidak valid!"); }
+        };
+        reader.readAsText(file);
+        event.target.value = ""; // reset input
+    }
+
+    // Fungsi Utama Pengeksekusi Server
+    function executeGAS(payload, loadingMsg) {
+        document.getElementById('globalLoader').innerText = loadingMsg;
+        document.getElementById('globalLoader').style.display = "block";
+
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(() => {
+            // Karena no-cors, kita reload data setelah jeda waktu agar server selesai memproses
+            setTimeout(() => { fetchMasterData(); alert("Perintah berhasil dieksekusi!"); }, 2000);
+        }).catch(e => { alert("Error jaringan."); document.getElementById('globalLoader').style.display = "none"; });
+    }
+</script>
+</body>
+</html>
